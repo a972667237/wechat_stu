@@ -8,7 +8,8 @@ from django.shortcuts import render
 from wechat_sdk import WechatBasic, WechatConf
 from django.http.response import HttpResponseBadRequest
 from wechat_sdk.exceptions import ParseError
-from models import KeyWord
+from wechat_sdk.messages import ImageMessage
+from models import KeyWord,Lottery
 WECHAT_TOKEN = 'wueiz123'
 AppID = 'wxae8f1122493c86b4'
 AppSecret = 'ae198ba478744c06576efd111deb94cb'
@@ -61,6 +62,23 @@ def wechat_main(request):
             ] 
         })
         message = wechat_instance.get_message()
+
+        if isinstance(message, ImageMessage):
+            openId = message.source
+            if len(Lottery.objects.filter(openId = openId)):
+                user = Lottery.objects.get(openId = openId)
+                reply_info = u"您的抽奖码是：" + user.lottery_id
+                response = wechat_instance.response_text(content=reply_info)
+                return HttpResponse(response, content_type="application/xml")
+            while True:
+                str = random_str()
+                if not len(Lottery.objects.filter(lottery_id=str)):
+                    break
+            user = Lottery.objects.create(openId = openId, lottery_id = str)
+            reply_info = u"您的抽奖码是：" + user.lottery_id
+            response = wechat_instance.response_text(content=reply_info)
+            return HttpResponse(response, content_type="application/xml")
+            
         reply_info = KeyWord.objects.get(keyword='default').content
         if message.type == "subscribe":
             reply_objects = KeyWord.objects.get(keyword='attention')
@@ -108,3 +126,14 @@ def wechat_main(request):
                     return HttpResponse(response, content_type="application/xml")
         response = wechat_instance.response_text(content=reply_info)
         return HttpResponse(response, content_type="application/xml")
+
+
+from random import Random
+def random_str(randomlength=12):
+    str = ''
+    chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789'
+    length = len(chars) - 1
+    random = Random()
+    for i in range(randomlength):
+        str+=chars[random.randint(0, length)]
+    return str

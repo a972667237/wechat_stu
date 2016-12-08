@@ -33,3 +33,10 @@ class Wechat_settings(models.Model):
     access_token = models.CharField(max_length=256)
     access_token_expires_at = models.CharField(max_length=20)
     get_date = models.DateTimeField('更新时间', auto_now_add=True)
+
+class Lottery(models.Model):
+    openId = models.CharField('微信识别码', max_length=256)
+    lottery_id = models.CharField('抽奖编号', max_length=16)
+    isUseful = models.BooleanField('是否有效', default=False)
+    def __unicode__(self):
+        return self.lottery_id
